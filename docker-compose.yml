@@ -1,0 +1,50 @@
+version: '3.7'
+
+services: # the different images that will be running as containers
+  # nginx: # service name
+  #   build: ./nginx # location of the dockerfile that defines the nginx image. The dockerfile will be used to spin up an image during the build stage
+  #   ports:
+  #     - 1339:80 # map the external port 1339 to the internal port 80. Any traffic from 1339 externally will be passed to port 80 of the NGINX container. To access this app, one would use an address such as 0.0.0.0:1339
+  #   volumes: # static storages provisioned since django does not handle static files in production
+  #     - static_volume:/home/app/microservice/static # provide a space for static files
+  #   depends_on:
+  #     - web # will only start if web is up and running
+  #   restart: "on-failure" # restart service when it fails
+  web: # service name
+    build: . #build the image for the web service from the dockerfile in parent directory.
+    # command directive passes the parameters to the service and they will be executed by the service. In this example, these are django commands which will be executed in the container where django lives.
+    command: sh -c "python manage.py makemigrations &&
+                    python manage.py migrate &&
+                    gunicorn webapp.wsgi:application --bind 0.0.0.0:8000" # Django commands to run app using gunicorn
+    volumes:
+      - .:/home/platform/webapp/ # map data and files from parent directory in host to microservice directory in docker container
+      - static_volume:/home/platform/webapp/static
+    # env_file: # file where env variables are stored. Used as best practice so as not to expose secret keys
+    #   - .env # name of the env file
+    image: webapp # name of the image
+
+    expose: # expose the port to other services defined here so that they can access this service via the exposed port. In the case of Django, this is 8000 by default
+      - 8000 # retrieved from the .env file
+    restart: "on-failure"
+    depends_on: # cannot start if db service is not up and running
+      - db
+  db: # service name
+    image: mysql # image name of the postgres database. during build, this will be pulled from dockerhub and a container spun up from it
+    environment: # access credentials from the .env file
+      - MYSQL_DATABASE='app_platform'
+      - MYSQL_USER='appuser'
+      - MYSQL_PASSWORD='123456'
+    restart: "on-failure"
+  redis:
+    restart: always
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+
+volumes:
+  web-django:
+  static_volume:
+  redisdata:
