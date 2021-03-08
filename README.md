@@ -1,4 +1,4 @@
-# notifications
+# Notifications App
 This README should:
 
 1-Guide you through getting the Docker container up and running.
@@ -7,7 +7,7 @@ This README should:
 
 3-provide some basic commands on how to work with
 
-<b>1. Build and run the container<b>
+<b>1. Build and run the container</b>
   
   1-Install Docker
   
